@@ -234,19 +234,13 @@ static inline Int128 int128_rshift(Int128 a, int n)
 
 static inline Int128 int128_lshift(Int128 a, int n)
 {
-    if (n == 0) {
-        return a;
-    }
-
-    uint64_t lo = int128_getlo(a);
-    int64_t hi = int128_gethi(a);
+    uint64_t l = a.lo << (n & 63);
     if (n >= 64) {
-        uint64_t l = lo << (n & 63);
         return int128_make128(0, l);
-    } else {
-        return int128_make128(lo << n,
-                              (hi << n) | (lo >> (64 - n)));
+    } else if (n > 0) {
+        return int128_make128(l, (a.hi << n) | (a.lo >> (64 - n)));
     }
+    return a;
 }
 
 static inline Int128 int128_add(Int128 a, Int128 b)
