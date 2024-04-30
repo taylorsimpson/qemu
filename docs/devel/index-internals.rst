@@ -12,6 +12,7 @@ Details about QEMU's various subsystems including how to add features to them.
    clocks
    ebpf_rss
    migration
+   hexagon-sys
    multi-process
    reset
    s390-cpu-topology
