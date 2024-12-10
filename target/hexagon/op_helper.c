@@ -2516,102 +2516,14 @@ void HELPER(stop)(CPUHexagonState *env)
     hexagon_stop_thread(env);
 }
 
-static void hex_vm_trace_gen_exception(GString *msg, CPUHexagonState *env)
-{
-    target_ulong gsr = hexagon_greg_read(env, HEX_GREG_GSR);
-    target_ulong cause = gsr & 0xffff;
-    switch (cause) {
-    case HEX_VM_EVENT_CAUSE_BUS_ERROR:
-        g_string_append_printf(msg, "bus error");
-        break;
-    case HEX_VM_EVENT_CAUSE_PROT_EX:
-        g_string_append_printf(msg, "execute protection");
-        break;
-    case HEX_VM_EVENT_CAUSE_PROT_UEX:
-        g_string_append_printf(msg, "user execute protection");
-        break;
-    case HEX_VM_EVENT_CAUSE_INVALID_PKT:
-        g_string_append_printf(msg, "invalid packet");
-        break;
-    case HEX_VM_EVENT_CAUSE_PRIV:
-        g_string_append_printf(msg, "privilege violation");
-        break;
-    case HEX_VM_EVENT_CAUSE_MISALIGN_PC:
-        g_string_append_printf(msg, "misaligned PC");
-        break;
-    case HEX_VM_EVENT_CAUSE_MISALIGN_LD:
-        g_string_append_printf(msg, "misaligned load");
-        break;
-    case HEX_VM_EVENT_CAUSE_MISALIGN_ST:
-        g_string_append_printf(msg, "misaligned store");
-        break;
-    case HEX_VM_EVENT_CAUSE_PROT_RD:
-        g_string_append_printf(msg, "read protection");
-        break;
-    case HEX_VM_EVENT_CAUSE_PROT_WR:
-        g_string_append_printf(msg, "write protection");
-        break;
-    case HEX_VM_EVENT_CAUSE_PROT_URD:
-        g_string_append_printf(msg, "user read protection");
-        break;
-    case HEX_VM_EVENT_CAUSE_PROT_UWR:
-        g_string_append_printf(msg, "user write protection");
-        break;
-    case HEX_VM_EVENT_CAUSE_PROT_CACHE_CONFLICT:
-        g_string_append_printf(msg, "cache conflict");
-        break;
-    case HEX_VM_EVENT_CAUSE_PROT_REG_COLLISION:
-        g_string_append_printf(msg, "register collision");
-        break;
-    default:
-        g_string_append_printf(msg, "unknown cause");
-        break;
-    }
-}
-
 void HELPER(hex_vm_trace_tb_start)(CPUHexagonState *env, target_ulong PC)
 {
-    target_ulong event_vectors = env->event_vectors;
-    if (event_vectors != INVALID_REG_VAL &&
-        event_vectors <= PC &&
-        PC < event_vectors + HEX_VM_NUM_VECTORS * 4) {
-        int event_num = (PC - env->event_vectors) / 4;
-        GString *msg = hex_vm_trace_str(PC);
-        g_string_append_printf(msg, "guest event: ");
-        switch (event_num) {
-        case HEX_VM_EVENT_RESERVED_0:
-        case HEX_VM_EVENT_RESERVED_3:
-        case HEX_VM_EVENT_RESERVED_4:
-        case HEX_VM_EVENT_RESERVED_6:
-            g_string_append_printf(msg, "reserved");
-            break;
-        case HEX_VM_EVENT_MACHINE_CHECK:
-            g_string_append_printf(msg, "machine check");
-            break;
-        case HEX_VM_EVENT_GEN_EXCEPTION:
-            g_string_append_printf(msg, "general exception: ");
-            hex_vm_trace_gen_exception(msg, env);
-            break;
-        case HEX_VM_EVENT_TRAP0:
-            g_string_append_printf(msg, "trap0");
-            break;
-        case HEX_VM_EVENT_INTERRUPT:
-            g_string_append_printf(msg, "interrupt");
-            break;
-        default:
-            g_string_append_printf(msg, "unknown");
-            break;
-        }
-        hex_vm_trace_end(msg);
-    }
+    hex_vm_trace_tb_start(env, PC);
 }
 
 void HELPER(hex_vm_trace_rte)(CPUHexagonState *env, target_ulong PC)
 {
-    GString *msg = hex_vm_trace_str(PC);
-    g_string_append_printf(msg, "rte: ELR = 0x%08" PRIx32,
-                           arch_get_system_reg(env, HEX_SREG_ELR));
-    hex_vm_trace_end(msg);
+    hex_vm_trace_rte(env, PC);
 }
 
 typedef struct {

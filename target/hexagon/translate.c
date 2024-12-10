@@ -1748,7 +1748,8 @@ static void hexagon_tr_translate_packet(DisasContextBase *dcbase, CPUState *cpu)
 
 #ifndef CONFIG_USER_ONLY
     if (ctx->need_trace_tb_start) {
-        gen_helper_hex_vm_trace_tb_start(tcg_env, tcg_constant_tl(ctx->base.pc_next));
+        TCGv PC = tcg_constant_tl(ctx->base.pc_next);
+        gen_helper_hex_vm_trace_tb_start(tcg_env, PC);
         ctx->need_trace_tb_start = false;
     }
 #endif

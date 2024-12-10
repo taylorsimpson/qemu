@@ -172,6 +172,7 @@ hexagon_softmmu_ss.add(files(
     'hex_interrupts.c',
     'monitor.c',
     'machine.c',
+    'hex_vm_trace.c',
 ))
 
 

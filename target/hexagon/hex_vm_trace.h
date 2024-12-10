@@ -8,10 +8,13 @@
 
 #include "trace.h"
 
-#define TRACE_HEX_VM (trace_event_get_state(TRACE_HEXAGON_VM) && qemu_loglevel_mask(LOG_TRACE))
+#define TRACE_HEX_VM \
+    (trace_event_get_state(TRACE_HEXAGON_VM) && \
+     qemu_loglevel_mask(LOG_TRACE))
 
 #define HEX_VM_NUM_VECTORS   8
 
+#define HEX_VM_TRAP1_VMVERSION      0
 #define HEX_VM_TRAP1_VMRTE          1
 #define HEX_VM_TRAP1_VMSETVEC       2
 #define HEX_VM_TRAP1_VMSETIE        3
@@ -66,5 +69,10 @@ static inline void hex_vm_trace_end(GString *msg)
     trace_hexagon_vm(msg->str);
     g_string_free(msg, true);
 }
+
+void hex_vm_trace_trap1(CPUHexagonState *env, int imm, target_ulong PC);
+void hex_vm_trace_tb_start(CPUHexagonState *env, target_ulong PC);
+void hex_vm_trace_rte(CPUHexagonState *env, target_ulong PC);
+
 #endif
 
