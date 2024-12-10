@@ -41,8 +41,6 @@
 #endif
 #include "opcodes.h"
 
-#define INVALID_REG_VAL (0xababababULL)
-
 static void hexagon_common_cpu_init(Object *obj)
 {
 }
@@ -263,7 +261,7 @@ static void print_reg_json(FILE *f, CPUHexagonState *env, int regnum)
 
 
 #ifndef CONFIG_USER_ONLY
-static target_ulong get_badva(CPUHexagonState *env)
+target_ulong get_badva(CPUHexagonState *env)
 {
   target_ulong ssr = ARCH_GET_SYSTEM_REG(env, HEX_SREG_SSR);
   if (GET_SSR_FIELD(SSR_BVS, ssr)) {
@@ -651,6 +649,7 @@ static void hexagon_cpu_reset_hold(Object *obj)
      memset(env->greg, 0, sizeof(target_ulong) * NUM_GREGS);
      env->pmu.num_packets = 0;
      env->pmu.hvx_packets = 0;
+     env->event_vectors = INVALID_REG_VAL;
 #endif
 
     ARCH_SET_SYSTEM_REG(env, HEX_SREG_HTID, env->threadId);

@@ -69,6 +69,7 @@ typedef struct DisasContext {
     bool pmu_enabled;
     TCGv t_sreg_new_value[NUM_SREGS];
     TCGv greg_new_value[NUM_GREGS];
+    bool need_trace_tb_start;
 #endif
     int preg_log[PRED_WRITES_MAX];
     int preg_log_idx;

@@ -39,6 +39,7 @@
 #include "hex_mmu.h"
 #endif
 #include "sysemu/runstate.h"
+#include "hex_vm_trace.h"
 #include <dirent.h>
 
 #ifndef CONFIG_USER_ONLY
@@ -1135,6 +1136,13 @@ void hexagon_cpu_do_interrupt(CPUState *cs)
                 env->threadId,
                 ARCH_GET_THREAD_REG(env, HEX_REG_PC),
                 ARCH_GET_SYSTEM_REG(env, HEX_SREG_BADVA));
+            if (TRACE_HEX_VM) {
+                GString *msg = hex_vm_trace_str(env->gpr[HEX_REG_PC]);
+                g_string_append_printf(msg,
+                    "tlbmissx badva: 0x%08" PRIx32,
+                    get_badva(env));
+                hex_vm_trace_end(msg);
+            }
             hex_tlb_lock(env);
 
             hexagon_ssr_set_cause(env, env->cause_code);
@@ -1162,6 +1170,13 @@ void hexagon_cpu_do_interrupt(CPUState *cs)
                 cs->exception_index, env->cause_code,
                 env->threadId, env->gpr[HEX_REG_PC],
                 ARCH_GET_SYSTEM_REG(env, HEX_SREG_BADVA));
+           if (TRACE_HEX_VM) {
+                GString *msg = hex_vm_trace_str(env->gpr[HEX_REG_PC]);
+                g_string_append_printf(msg,
+                    "tlbmissrw badva: 0x%08" PRIx32,
+                    get_badva(env));
+                hex_vm_trace_end(msg);
+            }
             hex_tlb_lock(env);
 
             hexagon_ssr_set_cause(env, env->cause_code);
@@ -1214,7 +1229,13 @@ void hexagon_cpu_do_interrupt(CPUState *cs)
                 cs->exception_index, env->cause_code,
                 env->threadId, env->gpr[HEX_REG_PC],
                 ARCH_GET_SYSTEM_REG(env, HEX_SREG_BADVA));
-
+           if (TRACE_HEX_VM) {
+                GString *msg = hex_vm_trace_str(env->gpr[HEX_REG_PC]);
+                g_string_append_printf(msg,
+                    "permission error badva: 0x%08" PRIx32,
+                    get_badva(env));
+                hex_vm_trace_end(msg);
+            }
 
             hexagon_ssr_set_cause(env, env->cause_code);
             set_addresses(env, 0, cs->exception_index);
@@ -1298,6 +1319,82 @@ void hexagon_cpu_do_interrupt(CPUState *cs)
     UNLOCK_IOTHREAD(exception_context);
 }
 
+static void log_trap1(CPUHexagonState *env, int imm, target_ulong PC)
+{
+    if (TRACE_HEX_VM) {
+        GString *msg = hex_vm_trace_str(PC);
+        switch (imm) {
+        case HEX_VM_TRAP1_VMRTE:
+            g_string_append_printf(msg, "vmrte: GELR = 0x%08" PRIx32,
+                                   env->greg[HEX_GREG_GELR]);
+            break;
+        case HEX_VM_TRAP1_VMSETVEC:
+            g_string_append_printf(msg, "vmsetvec(0x%08" PRIx32 ")",
+                                   env->gpr[0]);
+            /* Record the event vector for future tracing */
+            env->event_vectors = env->gpr[0];
+            break;
+        case HEX_VM_TRAP1_VMSETIE:
+            g_string_append_printf(msg, "vmsetie(%s)",
+                                   env->gpr[0] == 1 ? "enable" : "disable");
+            break;
+        case HEX_VM_TRAP1_VMGETIE:
+            g_string_append_printf(msg, "vmgetie");
+            break;
+        case HEX_VM_TRAP1_VMINTOP:
+            g_string_append_printf(msg, "vmintop(%" PRIu32 ")",
+                            env->gpr[0]);
+            break;
+        case HEX_VM_TRAP1_VMCLRMAP:
+            g_string_append_printf(msg, "vmclrmap(0x%08" PRIx32 ", %" PRIu32 ")",
+                                   env->gpr[0], env->gpr[1]);
+            break;
+        case HEX_VM_TRAP1_VMNEWMAP:
+            g_string_append_printf(msg, "vmnewmap(0x%08" PRIx32 ")",
+                                   env->gpr[0]);
+            break;
+        case HEX_VM_TRAP1_VMCACHE:
+            g_string_append_printf(msg, "vmcache(%" PRId32 ", 0x%08" PRIx32 ", %" PRId32 ")",
+                                   env->gpr[0], env->gpr[1], env->gpr[2]);
+            break;
+        case HEX_VM_TRAP1_VMGETTIME:
+            g_string_append_printf(msg, "vmgettime");
+            break;
+        case HEX_VM_TRAP1_VMSETTIME:
+            g_string_append_printf(msg, "vmsettime(0x%08" PRIx32 ", 0x%08" PRIx32 ")",
+                                   env->gpr[0], env->gpr[1]);
+            break;
+        case HEX_VM_TRAP1_VMWAIT:
+            g_string_append_printf(msg, "vmwait");
+            break;
+        case HEX_VM_TRAP1_VMYIELD:
+            g_string_append_printf(msg, "vmyield");
+            break;
+        case HEX_VM_TRAP1_VMSTART:
+            g_string_append_printf(msg, "vmstart(0x%08" PRIx32 ", 0x%08" PRIx32 ")",
+                                   env->gpr[0], env->gpr[1]);
+            break;
+        case HEX_VM_TRAP1_VMSTOP:
+            g_string_append_printf(msg, "vmstop");
+            break;
+        case HEX_VM_TRAP1_VMVPID:
+            g_string_append_printf(msg, "vmpid");
+            break;
+        case HEX_VM_TRAP1_VMSETREGS:
+            g_string_append_printf(msg, "vmsetregs(0x%08" PRIx32 ", 0x%08" PRIx32 ", 0x%08" PRIx32 ", 0x%08" PRIx32 ")",
+                                   env->gpr[0], env->gpr[1], env->gpr[2], env->gpr[3]);
+            break;
+        case HEX_VM_TRAP1_VMGETREGS:
+            g_string_append_printf(msg, "vmgetregs");
+            break;
+        default:
+            g_string_append_printf(msg, "trap1(%" PRId32 ")", imm);
+            break;
+        }
+        hex_vm_trace_end(msg);
+    }
+}
+
 void register_trap_exception(CPUHexagonState *env, int traptype, int imm,
                              target_ulong PC)
 {
@@ -1308,6 +1405,9 @@ void register_trap_exception(CPUHexagonState *env, int traptype, int imm,
                   ARCH_GET_THREAD_REG(env, HEX_REG_PC),
                   traptype, imm);
 
+    if (traptype == 1) {
+        log_trap1(env, imm, PC);
+    }
     CPUState *cs = env_cpu(env);
     /* assert(cs->exception_index == HEX_EVENT_NONE); */
 

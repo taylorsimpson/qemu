@@ -48,6 +48,7 @@ typedef struct CPUHexagonTLBContext CPUHexagonTLBContext;
 #include "hex_regs.h"
 
 #define TARGET_LONG_BITS 32
+#define INVALID_REG_VAL (0xababababULL)
 
 /*
  * Hexagon processors have a strong memory model.
@@ -354,6 +355,7 @@ typedef struct CPUArchState {
     target_ulong greg[NUM_GREGS];
     target_ulong greg_written[NUM_GREGS];
     target_ulong wait_next_pc;
+    target_ulong event_vectors;
 #endif
     target_ulong new_value_usr;
 
@@ -585,6 +587,8 @@ static inline void cpu_get_tb_cpu_state(CPUHexagonState *env, vaddr *pc,
 }
 
 #ifndef CONFIG_USER_ONLY
+
+target_ulong get_badva(CPUHexagonState *env);
 
 /*
  * Fill @a ints with the interrupt numbers that are currently asserted.

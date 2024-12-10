@@ -35,6 +35,9 @@
 #include "genptr.h"
 #include "printinsn.h"
 #include "pmu.h"
+#ifndef CONFIG_USER_ONLY
+#include "hex_vm_trace.h"
+#endif
 
 #define HELPER_H "helper.h"
 #include "exec/helper-info.c.inc"
@@ -1708,6 +1711,10 @@ static void hexagon_tr_init_disas_context(DisasContextBase *dcbase,
 
 static void hexagon_tr_tb_start(DisasContextBase *db, CPUState *cpu)
 {
+#ifndef CONFIG_USER_ONLY
+    DisasContext *ctx = container_of(db, DisasContext, base);
+    ctx->need_trace_tb_start = TRACE_HEX_VM;
+#endif
 }
 
 static void hexagon_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
@@ -1738,6 +1745,13 @@ static void hexagon_tr_translate_packet(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *ctx = container_of(dcbase, DisasContext, base);
     CPUHexagonState *env = cpu_env(cpu);
+
+#ifndef CONFIG_USER_ONLY
+    if (ctx->need_trace_tb_start) {
+        gen_helper_hex_vm_trace_tb_start(tcg_env, tcg_constant_tl(ctx->base.pc_next));
+        ctx->need_trace_tb_start = false;
+    }
+#endif
 
     decode_and_translate_packet(env, ctx);
 

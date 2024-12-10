@@ -18,6 +18,8 @@
 #ifndef HEXAGON_GEN_TCG_SYS_H
 #define HEXAGON_GEN_TCG_SYS_H
 
+#include "hex_vm_trace.h"
+
 /* System mode instructions */
 #define fGEN_TCG_Y2_swi(SHORTCODE) \
     gen_helper_swi(tcg_env, RsV)
@@ -99,6 +101,10 @@
 #define fGEN_TCG_J2_rte(SHORTCODE) \
     do { \
         TCGv new_ssr = tcg_temp_new(); \
+        if (TRACE_HEX_VM) { \
+            gen_helper_hex_vm_trace_rte(tcg_env, \
+                                        tcg_constant_tl(ctx->pkt->pc)); \
+        } \
         tcg_gen_deposit_tl(new_ssr, hex_t_sreg[HEX_SREG_SSR], \
                            tcg_constant_tl(0), \
                            reg_field_info[SSR_EX].offset, \

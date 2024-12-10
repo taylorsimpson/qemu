@@ -51,6 +51,8 @@ DEF_HELPER_2(nmi, void, env, i32)
 DEF_HELPER_3(setprio, void, env, i32, i32)
 DEF_HELPER_2(start, void, env, i32)
 DEF_HELPER_1(stop, void, env)
+DEF_HELPER_2(hex_vm_trace_tb_start, void, env, i32)
+DEF_HELPER_2(hex_vm_trace_rte, void, env, i32)
 #endif
 
 DEF_HELPER_5(check_vtcm_memcpy, void, env, i32, i32, i32, i32)
