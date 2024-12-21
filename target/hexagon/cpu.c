@@ -38,6 +38,7 @@
 #include "qemu/main-loop.h"
 #include "sysemu/cpus.h"
 #include "hex_interrupts.h"
+#include "hex_vm_trace.h"
 #endif
 #include "opcodes.h"
 
@@ -765,6 +766,7 @@ static void hexagon_cpu_realize(DeviceState *dev, Error **errp)
     env->pmu.vmstate_num_ctrs = NUM_PMU_CTRS;
 
     hex_mmu_realize(env);
+    env->trace_stack = TRACE_HEX_VM ? g_malloc0(sizeof(HexVMTraceStack)) : NULL;
     if (cs->cpu_index == 0) {
         env->g_sreg = g_malloc0(sizeof(target_ulong) * NUM_SREGS);
         env->g_gcycle = g_malloc0(sizeof(target_ulong) * NUM_GLOBAL_GCYCLE);

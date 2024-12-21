@@ -57,6 +57,60 @@
 #define HEX_VM_EVENT_CAUSE_PROT_CACHE_CONFLICT     0x28
 #define HEX_VM_EVENT_CAUSE_PROT_REG_COLLISION      0x29
 
+#define HEX_VM_TRACE_STACK_REGS                    32
+#define HEX_VM_TRACE_STACK_SIZE                    2
+
+typedef enum {
+    /* trap1 events (calls from guest to VM) */
+    HEX_VM_TRACE_VMVERSION,
+    HEX_VM_TRACE_VMRTE,
+    HEX_VM_TRACE_VMSETVEC,
+    HEX_VM_TRACE_VMSETIE,
+    HEX_VM_TRACE_VMGETIE,
+    HEX_VM_TRACE_VMINTOP,
+    HEX_VM_TRACE_VMCLRMAP,
+    HEX_VM_TRACE_VMNEWMAP,
+    HEX_VM_TRACE_VMCACHE,
+    HEX_VM_TRACE_VMGETTIME,
+    HEX_VM_TRACE_VMSETTIME,
+    HEX_VM_TRACE_VMWAIT,
+    HEX_VM_TRACE_VMYIELD,
+    HEX_VM_TRACE_VMSTART,
+    HEX_VM_TRACE_VMSTOP,
+    HEX_VM_TRACE_VMPID,
+    HEX_VM_TRACE_VMSETREGS,
+    HEX_VM_TRACE_VMGETREGS,
+    HEX_VM_TRACE_TRAP1_UNKNOWN,
+    HEX_VM_TRACE_TRAP0_ANGEL,
+    HEX_VM_TRACE_TRAP0,
+
+    /* HVM events (calls from VM to guest) */
+    HEX_VM_TRACE_MACHINE_CHECK,
+    HEX_VM_TRACE_GEN_EXCEPTION,
+    HEX_VM_TRACE_GUEST_TRAP0,
+    HEX_VM_TRACE_INTERRUPT,
+    HEX_VM_TRACE_RESERVED,
+
+    /* other events */
+    HEX_VM_TRACE_TLB_MISSRW,
+    HEX_VM_TRACE_TLB_MISSX,
+    HEX_VM_TRACE_PERM_ERR,
+
+    /* must be last */
+    HEX_VM_TRACE_INVALID
+} HexTraceEvent;
+
+typedef struct {
+    HexTraceEvent event;
+    target_ulong PC;
+    target_ulong regs[HEX_VM_TRACE_STACK_REGS];
+} HexVMTraceStackEntry;
+
+typedef struct {
+    uint32_t idx;
+    HexVMTraceStackEntry entries[HEX_VM_TRACE_STACK_SIZE];
+} HexVMTraceStack;
+
 static inline GString *hex_vm_trace_str(target_ulong PC)
 {
     GString *msg = g_string_sized_new(128);
@@ -70,9 +124,13 @@ static inline void hex_vm_trace_end(GString *msg)
     g_string_free(msg, true);
 }
 
+void hex_vm_trace_trap0(CPUHexagonState *env, int imm, target_ulong PC);
 void hex_vm_trace_trap1(CPUHexagonState *env, int imm, target_ulong PC);
 void hex_vm_trace_tb_start(CPUHexagonState *env, target_ulong PC);
 void hex_vm_trace_rte(CPUHexagonState *env, target_ulong PC);
+void hex_vm_trace_push(CPUHexagonState *env, HexTraceEvent event,
+                       target_ulong PC);
+HexTraceEvent hex_vm_trace_pop(CPUHexagonState *env, target_ulong PC);
 
 #endif
 

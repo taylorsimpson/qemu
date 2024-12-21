@@ -1142,6 +1142,8 @@ void hexagon_cpu_do_interrupt(CPUState *cs)
                     "tlbmissx badva: 0x%08" PRIx32,
                     get_badva(env));
                 hex_vm_trace_end(msg);
+                hex_vm_trace_push(env, HEX_VM_TRACE_TLB_MISSX,
+                                       env->gpr[HEX_REG_PC]);
             }
             hex_tlb_lock(env);
 
@@ -1176,6 +1178,8 @@ void hexagon_cpu_do_interrupt(CPUState *cs)
                     "tlbmissrw badva: 0x%08" PRIx32,
                     get_badva(env));
                 hex_vm_trace_end(msg);
+                hex_vm_trace_push(env, HEX_VM_TRACE_TLB_MISSRW,
+                                  env->gpr[HEX_REG_PC]);
             }
             hex_tlb_lock(env);
 
@@ -1235,6 +1239,8 @@ void hexagon_cpu_do_interrupt(CPUState *cs)
                     "permission error badva: 0x%08" PRIx32,
                     get_badva(env));
                 hex_vm_trace_end(msg);
+                hex_vm_trace_push(env, HEX_VM_TRACE_PERM_ERR,
+                                  env->gpr[HEX_REG_PC]);
             }
 
             hexagon_ssr_set_cause(env, env->cause_code);
@@ -1329,6 +1335,9 @@ void register_trap_exception(CPUHexagonState *env, int traptype, int imm,
                   ARCH_GET_THREAD_REG(env, HEX_REG_PC),
                   traptype, imm);
 
+    if (traptype == 0) {
+        hex_vm_trace_trap0(env, imm, PC);
+    }
     if (traptype == 1) {
         hex_vm_trace_trap1(env, imm, PC);
     }

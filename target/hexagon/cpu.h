@@ -37,6 +37,7 @@ typedef struct SystemState system_t;
 extern unsigned cpu_mmu_index(CPUHexagonState *env, bool ifetch);
 #ifndef CONFIG_USER_ONLY
 #include "reg_fields.h"
+#include "hex_vm_trace.h"
 typedef struct CPUHexagonTLBContext CPUHexagonTLBContext;
 #define NUM_SREGS 86
 #define NUM_GREGS 32
@@ -356,6 +357,7 @@ typedef struct CPUArchState {
     target_ulong greg_written[NUM_GREGS];
     target_ulong wait_next_pc;
     target_ulong event_vectors;
+    HexVMTraceStack *trace_stack;
 #endif
     target_ulong new_value_usr;
 
