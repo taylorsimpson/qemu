@@ -58,6 +58,7 @@
 #define HEX_VM_EVENT_CAUSE_PROT_REG_COLLISION      0x29
 
 #define HEX_VM_TRACE_STACK_REGS                    32
+#define HEX_VM_TRACE_STACK_PREDS                   4
 #define HEX_VM_TRACE_STACK_SIZE                    2
 
 typedef enum {
@@ -104,6 +105,7 @@ typedef struct {
     HexTraceEvent event;
     target_ulong PC;
     target_ulong regs[HEX_VM_TRACE_STACK_REGS];
+    target_ulong preds[HEX_VM_TRACE_STACK_PREDS];
 } HexVMTraceStackEntry;
 
 typedef struct {
@@ -130,7 +132,6 @@ void hex_vm_trace_tb_start(CPUHexagonState *env, target_ulong PC);
 void hex_vm_trace_rte(CPUHexagonState *env, target_ulong PC);
 void hex_vm_trace_push(CPUHexagonState *env, HexTraceEvent event,
                        target_ulong PC);
-HexTraceEvent hex_vm_trace_pop(CPUHexagonState *env, target_ulong PC);
 
 #endif
 

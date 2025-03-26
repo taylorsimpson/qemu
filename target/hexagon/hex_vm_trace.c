@@ -26,6 +26,9 @@ void hex_vm_trace_push(CPUHexagonState *env, HexTraceEvent event,
     for (int i = 0; i < HEX_VM_TRACE_STACK_REGS; i++) {
         entry->regs[i] = env->gpr[i];
     }
+    for (int i = 0; i < HEX_VM_TRACE_STACK_PREDS; i++) {
+        entry->preds[i] = env->pred[i];
+    }
     env->trace_stack->idx++;
 }
 
@@ -60,7 +63,7 @@ static const uint32_t hex_vm_trace_stack_pop_first_reg[HEX_VM_TRACE_INVALID] = {
     [HEX_VM_TRACE_TLB_MISSX] = 0,
 };
 
-HexTraceEvent hex_vm_trace_pop(CPUHexagonState *env, target_ulong PC)
+static HexTraceEvent hex_vm_trace_pop(CPUHexagonState *env, target_ulong PC)
 {
     HexVMTraceStackEntry *entry;
     uint32_t first;
@@ -80,8 +83,22 @@ HexTraceEvent hex_vm_trace_pop(CPUHexagonState *env, target_ulong PC)
             GString *msg = hex_vm_trace_str(PC);
             g_string_append_printf(msg, "WARNING: register %" PRId32
                                    " modified: ", i);
-            g_string_append_printf(msg, "0x%08" PRIx32 " != 0x%08" PRIx32,
+            g_string_append_printf(msg, "0x%08" PRIx32 "(old) != "
+                                   "0x%08" PRIx32 "(new)",
                                    pop, gpr);
+            hex_vm_trace_end(msg);
+        }
+    }
+    for (uint32_t i = 0; i < HEX_VM_TRACE_STACK_PREDS; i++) {
+        target_ulong pop = entry->preds[i];
+        target_ulong pred = env->pred[i];
+        if (pop != pred) {
+            GString *msg = hex_vm_trace_str(PC);
+            g_string_append_printf(msg, "WARNING: predicate %" PRId32
+                                   " modified: ", i);
+            g_string_append_printf(msg, "0x%02" PRIx32 "(old) != "
+                                   "0x%02" PRIx32 "(new)",
+                                   pop, pred);
             hex_vm_trace_end(msg);
         }
     }
